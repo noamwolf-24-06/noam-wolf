@@ -1,0 +1,98 @@
+def should_stop(bubbles_grid, bullet_bubble):
+    """
+    בודקת אם הבועה הנורתה (bullet_bubble) צריכה לעצור:
+      1. אם היא מתנגשת בבועה אחרת (שאינה שקופה).
+      2. אם היא מתנגשת בתקרה (y <= רדיוס).
+    """
+    # בדיקה מול כל הבועות הקיימות ב-grid
+    for row in range(len(bubbles_grid)):
+        for col in range(len(bubbles_grid[row])):
+            bubble = bubbles_grid[row][col]
+            if bubble["color"] == consts.NO_BUBBLE:
+                continue  # שקופה, מתעלמים
+
+            dx = bubble["center_x"] - bullet_bubble["center_x"]
+            dy = bubble["center_y"] - bullet_bubble["center_y"]
+            distance = (dx ** 2 + dy ** 2) ** 0.5
+
+            if distance <= consts.BUBBLE_RADIUS * 2 - consts.ROWS_OVERLAP:
+                return True  # התנגשות בבועה אחרת
+
+    # בדיקה מול התקרה
+    if bullet_bubble["center_y"] - consts.BUBBLE_RADIUS <= 0:
+        return True
+
+    return False
+
+————-
+
+def remove_extinct_colors(bubble_colors):
+    """
+    מקבלת את רשימת הצבעים הפעילים במשחק ומוחקת צבעים שלא קיימים
+    לא במחסנית (stack) ולא במטריצת הבועות (grid).
+    """
+    colors_in_use = set()
+
+    # מעבר על כל ה-grid
+    for row in BubblesGrid.bubbles_grid:
+        for bubble in row:
+            if bubble["color"] != consts.NO_BUBBLE:
+                colors_in_use.add(bubble["color"])
+
+    # מעבר על ה-stack
+    for bubble in Stack.stack:
+        if bubble["color"] != consts.NO_BUBBLE:
+            colors_in_use.add(bubble["color"])
+
+    # השארת רק הצבעים שעדיין בשימוש
+    bubble_colors[:] = [c for c in bubble_colors if c in colors_in_use]
+
+———
+def is_lose():
+    """
+    מחזירה True אם המשתמש הפסיד:
+    יש יותר מדי שורות מלאות (לא ריקות) עד לקו ההפסד.
+    """
+    non_empty_rows = 0
+    for row in BubblesGrid.bubbles_grid[:-1]:  # לא סופרים את השורה השקופה האחרונה
+        if any(b["color"] != consts.NO_BUBBLE for b in row):
+            non_empty_rows += 1
+
+    return non_empty_rows >= consts.NUM_OF_LINES_LOSE
+
+————
+def is_win():
+    """
+    מחזירה True אם המשתמש ניצח:
+    לא נותרו יותר בועות על הלוח.
+    """
+    for row in BubblesGrid.bubbles_grid:
+        for bubble in row:
+            if bubble["color"] != consts.NO_BUBBLE:
+                return False
+    return True
+———-
+def find_bubble_location_in_grid(bullet_bubble):
+    """
+    מקבלת את הבועה שנורתה ומחזירה tuple (row, col)
+    – המקום הקרוב ביותר ב-grid שבו היא צריכה להתמקם.
+    """
+    closest_location = None
+    min_distance = float("inf")
+
+    for row in range(len(bubbles_grid)):
+        for col in range(consts.BUBBLE_GRID_COLS):
+            bubble = bubbles_grid[row][col]
+
+            # נבדוק רק בועות ריקות
+            if bubble["color"] == consts.NO_BUBBLE:
+                dx = bubble["center_x"] - bullet_bubble["center_x"]
+                dy = bubble["center_y"] - bullet_bubble["center_y"]
+                distance = (dx ** 2 + dy ** 2) ** 0.5
+
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_location = (row, col)
+
+    return closest_location
+
